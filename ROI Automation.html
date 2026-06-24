@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ROI Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --navy:    #0F1F3D;
+    --navy2:   #1A3560;
+    --blue:    #2563EB;
+    --blue-lt: #EFF6FF;
+    --teal:    #0EA5E9;
+    --green:   #059669;
+    --green-lt:#ECFDF5;
+    --amber:   #D97706;
+    --amber-lt:#FFFBEB;
+    --red:     #DC2626;
+    --gray50:  #F8FAFC;
+    --gray100: #F1F5F9;
+    --gray200: #E2E8F0;
+    --gray400: #94A3B8;
+    --gray600: #475569;
+    --gray800: #1E293B;
+    --radius:  10px;
+    --shadow:  0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    --shadow-lg: 0 8px 32px rgba(15,31,61,.12);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--gray100);
+    color: var(--gray800);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ─────────────────────────────────────── */
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 60%, #1e4a8a 100%);
+    padding: 28px 40px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .header-icon {
+    width: 48px; height: 48px; background: rgba(255,255,255,.12);
+    border-radius: 12px; display: grid; place-items: center;
+    font-size: 22px;
+  }
+  header h1 { color: #fff; font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+  header p  { color: rgba(255,255,255,.6); font-size: 13px; margin-top: 2px; }
+
+  .btn-export {
+    display: flex; align-items: center; gap: 8px;
+    background: #fff; color: var(--navy);
+    border: none; border-radius: 8px;
+    padding: 10px 20px; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    white-space: nowrap;
+  }
+  .btn-export:hover { background: var(--blue-lt); color: var(--blue); transform: translateY(-1px); }
+
+  /* ── Layout ─────────────────────────────────────── */
+  .page { max-width: 1320px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  .grid-main {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* ── Cards ──────────────────────────────────────── */
+  .card {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .card-header {
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--gray200);
+  }
+  .card-header .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--blue); flex-shrink: 0;
+  }
+  .card-header h2 { font-size: 13px; font-weight: 600; color: var(--gray800); }
+  .card-header .badge {
+    margin-left: auto; font-size: 11px; padding: 2px 8px;
+    border-radius: 20px; background: var(--blue-lt); color: var(--blue); font-weight: 500;
+  }
+  .card-body { padding: 18px 20px; }
+
+  /* ── Input Groups ───────────────────────────────── */
+  .section-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .8px; color: var(--gray400); margin: 16px 0 10px;
+  }
+  .section-label:first-child { margin-top: 0; }
+
+  .field { margin-bottom: 10px; }
+  .field label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: var(--gray600); margin-bottom: 4px;
+  }
+  .input-wrap { position: relative; }
+  .input-wrap .prefix, .input-wrap .suffix {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 12px; color: var(--gray400); pointer-events: none;
+  }
+  .input-wrap .prefix { left: 10px; }
+  .input-wrap .suffix { right: 10px; }
+
+  input[type="number"] {
+    width: 100%; height: 36px;
+    border: 1.5px solid var(--gray200);
+    border-radius: 7px; font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--gray800); background: var(--gray50);
+    transition: border-color .15s, background .15s;
+    outline: none;
+  }
+  input[type="number"]:focus { border-color: var(--blue); background: #fff; }
+  .has-prefix input  { padding: 0 10px 0 24px; }
+  .has-suffix input  { padding: 0 28px 0 10px; }
+  .plain input       { padding: 0 10px; }
+
+  input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 4px;
+    background: var(--gray200); border-radius: 2px; outline: none; cursor: pointer;
+    margin: 6px 0 2px;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px;
+    background: var(--blue); border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+  }
+  .range-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 600; color: var(--blue);
+    text-align: right;
+  }
+
+  /* ── KPI Grid ───────────────────────────────────── */
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .kpi {
+    background: var(--gray50); border: 1px solid var(--gray200);
+    border-radius: var(--radius); padding: 14px 16px;
+    position: relative; overflow: hidden;
+  }
+  .kpi::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 3px; height: 100%; border-radius: 3px 0 0 3px;
+  }
+  .kpi.green::before  { background: var(--green); }
+  .kpi.blue::before   { background: var(--blue); }
+  .kpi.teal::before   { background: var(--teal); }
+  .kpi.amber::before  { background: var(--amber); }
+  .kpi.navy::before   { background: var(--navy); }
+
+  .kpi-label { font-size: 11px; color: var(--gray400); font-weight: 500; margin-bottom: 4px; }
+  .kpi-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px; font-weight: 700; color: var(--gray800); line-height: 1.1;
+  }
+  .kpi-val.big { font-size: 26px; }
+  .kpi-sub { font-size: 11px; color: var(--gray400); margin-top: 3px; }
+
+  /* ── ROI Meter ──────────────────────────────────── */
+  .roi-meter-wrap { margin-bottom: 20px; }
+  .roi-meter-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .roi-meter-header span { font-size: 12px; color: var(--gray600); font-weight: 500; }
+  .roi-meter-header strong {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px; font-weight: 700; color: var(--green);
+  }
+  .meter-track {
+    height: 10px; background: var(--gray200); border-radius: 10px; overflow: hidden;
+  }
+  .meter-fill {
+    height: 100%; border-radius: 10px;
+    background: linear-gradient(90deg, var(--teal), var(--green));
+    transition: width .5s cubic-bezier(.4,0,.2,1);
+    min-width: 2px;
+  }
+
+  /* ── Tables ─────────────────────────────────────── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table thead th {
+    padding: 8px 12px; text-align: left;
+    font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .5px; color: var(--gray400);
+    background: var(--gray50); border-bottom: 1px solid var(--gray200);
+  }
+  .data-table thead th:not(:first-child) { text-align: right; }
+  .data-table tbody tr { border-bottom: 1px solid var(--gray100); }
+  .data-table tbody tr:hover { background: var(--gray50); }
+  .data-table tbody td { padding: 9px 12px; color: var(--gray800); }
+  .data-table tbody td:not(:first-child) {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+  }
+  .data-table tfoot td {
+    padding: 10px 12px; font-weight: 700;
+    background: var(--navy); color: #fff; font-size: 13px;
+    border-radius: 0;
+  }
+  .data-table tfoot td:not(:first-child) {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .data-table .green-row td { background: var(--green-lt); color: var(--green); font-weight: 600; }
+  .data-table .green-row td:first-child { color: var(--gray800); font-weight: 600; }
+
+  .table-section { margin-bottom: 20px; }
+  .table-title {
+    font-size: 12px; font-weight: 600; color: var(--navy);
+    padding: 10px 0 8px; border-bottom: 2px solid var(--navy);
+    margin-bottom: 0; letter-spacing: -.1px;
+  }
+
+  /* ── Waterfall Chart ────────────────────────────── */
+  .waterfall { display: flex; align-items: flex-end; gap: 6px; height: 160px; margin: 12px 0 6px; }
+  .wf-col { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
+  .wf-bar-wrap { width: 100%; display: flex; flex-direction: column; justify-content: flex-end; position: relative; flex: 1; }
+  .wf-bar {
+    border-radius: 4px 4px 0 0;
+    width: 100%;
+    transition: height .4s cubic-bezier(.4,0,.2,1);
+    min-height: 4px;
+  }
+  .wf-bar.invest { background: linear-gradient(180deg, #e55555, var(--red)); }
+  .wf-bar.saving { background: linear-gradient(180deg, #34d399, var(--green)); }
+  .wf-bar.net    { background: linear-gradient(180deg, #60a5fa, var(--blue)); }
+  .wf-label { font-size: 10px; color: var(--gray400); margin-top: 4px; text-align: center; line-height: 1.3; }
+  .wf-val { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; margin-bottom: 3px; }
+
+  /* ── Payback Timeline ───────────────────────────── */
+  .payback-track {
+    height: 24px; background: var(--gray100); border-radius: 6px;
+    overflow: hidden; position: relative; margin: 8px 0;
+  }
+  .payback-fill {
+    height: 100%; background: linear-gradient(90deg, var(--blue), var(--teal));
+    border-radius: 6px; transition: width .5s cubic-bezier(.4,0,.2,1);
+    display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;
+  }
+  .payback-fill span {
+    font-size: 11px; font-weight: 600; color: #fff;
+    white-space: nowrap;
+  }
+  .payback-ticks { display: flex; justify-content: space-between; }
+  .payback-ticks span { font-size: 10px; color: var(--gray400); }
+
+  /* ── Multi-site banner ──────────────────────────── */
+  .multi-banner {
+    background: linear-gradient(135deg, var(--navy) 0%, #1e4a8a 100%);
+    border-radius: var(--radius); padding: 16px 20px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    margin-top: 20px;
+  }
+  .multi-item { text-align: center; }
+  .multi-item .lbl { font-size: 11px; color: rgba(255,255,255,.5); margin-bottom: 4px; }
+  .multi-item .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px; font-weight: 700; color: #fff;
+  }
+  .multi-item .val.gold { color: #FBBF24; }
+
+  /* ── Responsive ─────────────────────────────────── */
+  @media (max-width: 900px) {
+    .grid-main { grid-template-columns: 1fr; }
+    header { padding: 20px; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .multi-banner { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-icon">⚙</div>
+    <div>
+      <h1>ROI Calculator</h1>
+      <p>Adjust inputs · Results update instantly · Offline Word export</p>
+    </div>
+  </div>
+  <button class="btn-export" onclick="exportWord()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    Download Word Report
+  </button>
+</header>
+
+<div class="page">
+<div class="grid-main">
+
+  <!--  LEFT: Inputs  -->
+  <div>
+    <!-- Efficiency -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="dot" style="background:var(--teal)"></div>
+        <h2>Efficiency</h2>
+        <span class="badge">A</span>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>AI Efficiency Gain</label>
+          <div class="range-val" id="eff-display">70%</div>
+          <input type="range" id="efficiency" min="10" max="95" value="70" step="5" oninput="onRange(this,'eff-display','%')"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Labor & Ops -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="dot" style="background:var(--blue)"></div>
+        <h2>Labor &amp; Operations</h2>
+        <span class="badge">B</span>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>Engineer Labor Rate ($/hr)</label>
+          <div class="input-wrap has-prefix">
+            <span class="prefix">$</span>
+            <input type="number" id="rate" value="200" min="50" max="1000" oninput="calc()"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Work Days per Year</label>
+          <div class="input-wrap plain">
+            <input type="number" id="days" value="251" min="100" max="365" oninput="calc()"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Items Researched per Day</label>
+          <div class="input-wrap plain">
+            <input type="number" id="items" value="2" min="1" max="50" oninput="calc()"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>Number of DCS Sites</label>
+          <div class="input-wrap plain">
+            <input type="number" id="sites" value="1" min="1" max="200" oninput="calc()"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Effort -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="dot" style="background:var(--amber)"></div>
+        <h2>Baseline Effort</h2>
+        <span class="badge">C</span>
+      </div>
+      <div class="card-body">
+        <div class="field"><label>Research / Determine tag attributes (hrs/item)</label>
+          <div class="input-wrap plain"><input type="number" id="e1" value="0.30" step="0.05" min="0" oninput="calc()"/></div></div>
+        <div class="field"><label>Control strategy diagrams (hrs/item)</label>
+          <div class="input-wrap plain"><input type="number" id="e2" value="0.50" step="0.05" min="0" oninput="calc()"/></div></div>
+        <div class="field"><label>Documenting / Researching engineering notes (hrs/item)</label>
+          <div class="input-wrap plain"><input type="number" id="e3" value="0.20" step="0.05" min="0" oninput="calc()"/></div></div>
+        <div class="field"><label>Research dependencies (hrs/item)</label>
+          <div class="input-wrap plain"><input type="number" id="e4" value="0.20" step="0.05" min="0" oninput="calc()"/></div></div>
+        <div class="field"><label>Control programs, spares, strategies, issues (hrs/item)</label>
+          <div class="input-wrap plain"><input type="number" id="e5" value="0.25" step="0.05" min="0" oninput="calc()"/></div></div>
+        <div class="field"><label>Preparation for MoC or Export of config (hrs/item)</label>
+          <div class="input-wrap plain"><input type="number" id="e6" value="0.25" step="0.05" min="0" oninput="calc()"/></div></div>
+        <div class="field"><label>Any other hours spent (hrs/item)</label>
+          <div class="input-wrap plain"><input type="number" id="e7" value="0.00" step="0.05" min="0" oninput="calc()"/></div></div>
+
+        <div class="section-label">Calculated Totals</div>
+        <div class="field"><label>Total Hours per Item</label>
+          <div class="input-wrap plain"><input type="number" id="total-per-item" value="0.00" readonly/></div></div>
+        <div class="field"><label>Total Hours for Entered DCS / Items per Day</label>
+          <div class="input-wrap plain"><input type="number" id="total-hours" value="0.00" readonly/></div></div>
+      </div>
+    </div>
+
+    <!-- Investment -->
+    <div class="card">
+      <div class="card-header">
+        <div class="dot" style="background:var(--red)"></div>
+        <h2>Investment</h2>
+        <span class="badge">D</span>
+      </div>
+      <div class="card-body">
+        <div class="field"><label>Software Cost – Year 1 ($)</label>
+          <div class="input-wrap has-prefix"><span class="prefix">$</span>
+          <input type="number" id="sw" value="61853" min="0" oninput="calc()"/></div></div>
+        <div class="field"><label>Support Cost – Year 1 ($)</label>
+          <div class="input-wrap has-prefix"><span class="prefix">$</span>
+          <input type="number" id="sup" value="12368" min="0" oninput="calc()"/></div></div>
+        <div class="field"><label>Support Annual Escalation (%)</label>
+          <div class="input-wrap has-suffix"><span class="suffix">%</span>
+          <input type="number" id="esc" value="5" min="0" max="50" oninput="calc()"/></div></div>
+        <div class="field"><label>Service Cost – Year 1 ($)</label>
+          <div class="input-wrap has-prefix"><span class="prefix">$</span>
+          <input type="number" id="svc" value="30000" min="0" oninput="calc()"/></div></div>
+        <div class="field"><label>Analysis Horizon (Years)</label>
+          <div class="input-wrap plain">
+          <input type="number" id="yrs" value="5" min="1" max="10" oninput="calc()"/></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!--  RIGHT: Outputs  -->
+  <div>
+
+    <!-- KPI strip -->
+    <div class="kpi-grid" style="margin-bottom:14px">
+      <div class="kpi green">
+        <div class="kpi-label">Total Investment Before AI</div>
+        <div class="kpi-val big" id="kpi-before">$0</div>
+        <div class="kpi-sub" id="kpi-before-sub">current resource cost</div>
+      </div>
+      <div class="kpi blue">
+        <div class="kpi-label">Total Investment After AI</div>
+        <div class="kpi-val big" id="kpi-after">$0</div>
+        <div class="kpi-sub" id="kpi-after-sub">AI resource cost + AI investment</div>
+      </div>
+      <div class="kpi teal">
+        <div class="kpi-label">Net Savings</div>
+        <div class="kpi-val" id="kpi-net">$0</div>
+        <div class="kpi-sub">before AI - after AI</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-label">ROI</div>
+        <div class="kpi-val" id="kpi-roi">0%</div>
+        <div class="kpi-sub">return on AI investment</div>
+      </div>
+    </div>
+
+    <!-- ROI meter -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-body">
+        <div class="roi-meter-wrap">
+          <div class="roi-meter-header">
+            <span>Return on Investment</span>
+            <strong id="roi-pct-label">0%</strong>
+          </div>
+          <div class="meter-track"><div class="meter-fill" id="roi-meter" style="width:0%"></div></div>
+        </div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <div style="flex:1;min-width:140px">
+            <div style="font-size:11px;color:var(--gray400);margin-bottom:2px">Baseline Total Hours / Day</div>
+            <div class="kpi-val" style="font-size:15px" id="effort-base">0.00 hrs/day</div>
+          </div>
+          <div style="flex:1;min-width:140px">
+            <div style="font-size:11px;color:var(--gray400);margin-bottom:2px">With AI Total Hours / Day</div>
+            <div class="kpi-val" style="font-size:15px;color:var(--teal)" id="effort-auto">0.00 hrs/day</div>
+          </div>
+          <div style="flex:1;min-width:140px">
+            <div style="font-size:11px;color:var(--gray400);margin-bottom:2px">Time Saved / Day</div>
+            <div class="kpi-val" style="font-size:15px;color:var(--green)" id="time-saved">0 hrs/day</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Effort table -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="dot"></div><h2>Engineering Effort Totals</h2>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="data-table">
+          <thead><tr>
+            <th>Task</th>
+            <th>Baseline Total (hrs/day)</th>
+            <th id="th-ai">With AI Total (hrs/day)</th>
+            <th>Saved Total (hrs/day)</th>
+          </tr></thead>
+          <tbody id="effort-tbody"></tbody>
+          <tfoot><tr>
+            <td>Total</td>
+            <td id="tfoot-base">0.00</td>
+            <td id="tfoot-auto">0.00</td>
+            <td id="tfoot-saved">0.00</td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- Savings table -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="dot" style="background:var(--green)"></div><h2>Financial Savings</h2>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="data-table">
+          <thead><tr><th>Metric</th><th>Current State</th><th>With AI</th></tr></thead>
+          <tbody>
+            <tr><td>Total Items per Day</td><td id="s-items-cur">0</td><td id="s-items-ai">0</td></tr>
+            <tr><td>Total Research Time per Day (hrs)</td><td id="s-time-cur">0.00</td><td id="s-time-ai">0.00</td></tr>
+            <tr><td>Labor Rate ($/hr)</td><td id="s-rate-cur">$0</td><td id="s-rate-ai">$0</td></tr>
+            <tr><td>Daily Cost for Resources ($)</td><td id="s-daily-cur">$0</td><td id="s-daily-ai">$0</td></tr>
+            <tr><td>Work Days / Year</td><td id="s-days-cur">0</td><td id="s-days-ai">0</td></tr>
+            <tr><td>Total Cost for Resources ($)</td><td id="s-annual-cur">$0</td><td id="s-annual-ai">$0</td></tr>
+            <tr class="green-row"><td>Annual Resource Savings ($)</td><td></td><td id="s-savings">$0</td></tr>
+            <tr class="green-row"><td id="s-net-label">Net Savings After AI Investment ($)</td><td></td><td id="s-net">$0</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Investment table -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="dot" style="background:var(--red)"></div><h2>Investment Schedule</h2>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="data-table" id="inv-table">
+          <thead id="inv-head"></thead>
+          <tbody id="inv-body"></tbody>
+          <tfoot id="inv-foot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- ROI summary -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="dot" style="background:var(--green)"></div><h2>ROI Summary</h2>
+      </div>
+      <div class="card-body" style="padding:0">
+        <table class="data-table">
+          <tbody>
+            <tr><td>Annual Resource Savings</td><td id="r-annual">$0</td></tr>
+            <tr><td id="r-ben-label">Realized Benefits (5 Yrs)</td><td id="r-ben">$0</td></tr>
+            <tr><td>Total AI Investment</td><td id="r-inv">$0</td></tr>
+            <tr><td id="r-before-label">Total Investment Before AI</td><td id="r-before">$0</td></tr>
+            <tr><td id="r-after-label">Total Investment After AI</td><td id="r-after">$0</td></tr>
+            <tr class="green-row"><td>Net Savings</td><td id="r-net">$0</td></tr>
+            <tr class="green-row"><td>Return on Investment</td><td id="r-roi">0%</td></tr>
+            <tr><td>Payback Period</td><td id="r-pay">0 months</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Payback timeline -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-header">
+        <div class="dot" style="background:var(--teal)"></div><h2>Payback Timeline</h2>
+      </div>
+      <div class="card-body">
+        <div class="payback-track">
+          <div class="payback-fill" id="payback-bar" style="width:20%"><span id="payback-bar-label">0 mo</span></div>
+        </div>
+        <div class="payback-ticks">
+          <span>0</span><span id="tick-mid">30 mo</span><span id="tick-end">60 mo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Waterfall -->
+    <div class="card" style="margin-bottom:0">
+      <div class="card-header">
+        <div class="dot" style="background:var(--amber)"></div><h2>Financial Overview</h2>
+      </div>
+      <div class="card-body">
+        <div class="waterfall">
+          <div class="wf-col">
+            <div class="wf-val" id="wf-inv-val" style="color:var(--red)">$0</div>
+            <div class="wf-bar-wrap"><div class="wf-bar invest" id="wf-inv" style="height:40%"></div></div>
+            <div class="wf-label">Before<br>AI</div>
+          </div>
+          <div class="wf-col">
+            <div class="wf-val" id="wf-ben-val" style="color:var(--green)">$0</div>
+            <div class="wf-bar-wrap"><div class="wf-bar saving" id="wf-ben" style="height:80%"></div></div>
+            <div class="wf-label">After<br>AI</div>
+          </div>
+          <div class="wf-col">
+            <div class="wf-val" id="wf-net-val" style="color:var(--blue)">$0</div>
+            <div class="wf-bar-wrap"><div class="wf-bar net" id="wf-net" style="height:60%"></div></div>
+            <div class="wf-label">Net<br>Savings</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /right -->
+</div><!-- /grid -->
+</div><!-- /page -->
+
+<script>
+// Safe getElementById alias
+function gel(id) { return document.getElementById(id); }
+const fmt  = n => '$' + Math.round(n).toLocaleString();
+const fmt2 = n => n.toFixed(2);
+const fmtK = n => n >= 1e6 ? '$' + (n/1e6).toFixed(2)+'M' : n >= 1000 ? '$' + (n/1000).toFixed(1)+'K' : fmt(n);
+
+const TASKS = [
+  'Research / Determine tag attributes',
+  'Control strategy diagrams',
+  'Documenting / Researching eng. notes',
+  'Research dependencies',
+  'Control programs, spares, strategies',
+  'Preparation for MoC or Export',
+  'Any other hours spent',
+];
+
+// Called by inline oninput on the range slider
+function onRange(el, displayId, suffix) {
+  document.getElementById(displayId).textContent = el.value + suffix;
+  calc();
+}
+
+let lastCalc = {};
+
+function calc() {
+  const eff   = +gel('efficiency').value / 100;
+  const rate  = +gel('rate').value;
+  const days  = +gel('days').value;
+  const items = +gel('items').value;
+  const sites = +gel('sites').value;
+  const yrs   = +gel('yrs').value;
+  const sw    = +gel('sw').value;
+  const sup1  = +gel('sup').value;
+  const escP  = +gel('esc').value / 100;
+  const svc1  = +gel('svc').value;
+
+  const effortIds = ['e1','e2','e3','e4','e5','e6','e7'];
+  const efforts   = effortIds.map(id => +gel(id).value || 0);
+  const totalBase = efforts.reduce((a,b)=>a+b,0);
+  const totalAuto = totalBase * (1 - eff);
+  const totalItemsPerDay = items * sites;
+  const baseHoursDay = totalBase * totalItemsPerDay;
+  const aiHoursDay = totalAuto * totalItemsPerDay;
+  const savedHoursDay = baseHoursDay - aiHoursDay;
+
+  gel('total-per-item').value = fmt2(totalBase);
+  gel('total-hours').value = fmt2(baseHoursDay);
+
+  // Effort table totals for the entered DCS count and items/day
+  const tbody = gel('effort-tbody');
+  tbody.innerHTML = '';
+  efforts.forEach((e, i) => {
+    const base = e * totalItemsPerDay;
+    const ai = base * (1 - eff);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${TASKS[i]}</td><td>${fmt2(base)}</td><td>${fmt2(ai)}</td><td>${fmt2(base-ai)}</td>`;
+    tbody.appendChild(tr);
+  });
+  gel('th-ai').textContent       = `With AI Total (${Math.round(eff*100)}%)`;
+  gel('tfoot-base').textContent  = fmt2(baseHoursDay);
+  gel('tfoot-auto').textContent  = fmt2(aiHoursDay);
+  gel('tfoot-saved').textContent = fmt2(savedHoursDay);
+
+  // Savings totals across all entered DCS sites
+  const dailyCur  = baseHoursDay * rate;
+  const dailyAI   = aiHoursDay * rate;
+  const annualCur = dailyCur * days;
+  const annualAI  = dailyAI  * days;
+  const savings   = annualCur - annualAI;
+
+  gel('s-items-cur').textContent = totalItemsPerDay; gel('s-items-ai').textContent = totalItemsPerDay;
+  gel('s-time-cur').textContent  = fmt2(baseHoursDay);
+  gel('s-time-ai').textContent   = fmt2(aiHoursDay);
+  gel('s-rate-cur').textContent  = '$'+rate.toLocaleString();
+  gel('s-rate-ai').textContent   = '$'+rate.toLocaleString();
+  gel('s-daily-cur').textContent = fmt(dailyCur);
+  gel('s-daily-ai').textContent  = fmt(dailyAI);
+  gel('s-days-cur').textContent  = days; gel('s-days-ai').textContent = days;
+  gel('s-annual-cur').textContent= fmt(annualCur);
+  gel('s-annual-ai').textContent = fmt(annualAI);
+  gel('s-savings').textContent   = fmt(savings);
+
+  // Investment schedule, aligned with the uploaded Excel:
+  // Year 1 support = sup1. Each later year = sup1 + escalation% × previous year's support.
+  let supCosts = [], totalInvPerDCS = 0;
+  let prevSupport = 0;
+  for (let y = 0; y < yrs; y++) {
+    const sup = y === 0 ? sup1 : sup1 + (escP * prevSupport);
+    prevSupport = sup;
+    const swY = y === 0 ? sw : 0;
+    const svY = y === 0 ? svc1 : 0;
+    const tot = swY + sup + svY;
+    supCosts.push({ sw: swY, sup, svc: svY, tot });
+    totalInvPerDCS += tot;
+  }
+  const totalInv = totalInvPerDCS * sites;
+  const supCostsTotal = supCosts.map(c => ({ sw: c.sw * sites, sup: c.sup * sites, svc: c.svc * sites, tot: c.tot * sites }));
+
+  // Investment table
+  const head = gel('inv-head'), body = gel('inv-body'), foot = gel('inv-foot');
+  const yrsArr = Array.from({length: yrs}, (_,i) => `Year ${i+1}`);
+  head.innerHTML = `<tr><th>Component</th>${yrsArr.map(y=>`<th>${y}</th>`).join('')}<th>Total</th></tr>`;
+
+  const rowDef = [
+    ['Software', c=>c.sw],
+    ['Support',  c=>c.sup],
+    ['Service',  c=>c.svc],
+  ];
+  body.innerHTML = '';
+  rowDef.forEach(([label, fn]) => {
+    const vals = supCostsTotal.map(fn);
+    const tot  = vals.reduce((a,b)=>a+b,0);
+    const tr   = document.createElement('tr');
+    tr.innerHTML = `<td>${label}</td>${vals.map(v=>`<td>${v===0?'—':fmt(v)}</td>`).join('')}<td>${fmt(tot)}</td>`;
+    body.appendChild(tr);
+  });
+  const totVals = supCostsTotal.map(c=>c.tot);
+  foot.innerHTML = `<tr><td>Total / Year</td>${totVals.map(v=>`<td>${fmt(v)}</td>`).join('')}<td>${fmt(totalInv)}</td></tr>`;
+
+  // ROI / total investment before and after AI
+  const benefits = savings * yrs;
+  const totalBeforeAI = annualCur * yrs;
+  const totalAfterAI = (annualAI * yrs) + totalInv;
+  const netSav   = totalBeforeAI - totalAfterAI;
+  const roiPct   = totalInv > 0 ? (netSav / totalInv) * 100 : 0;
+  const year1Investment = (supCosts[0]?.tot || 0) * sites;
+  const paybackMo = savings > 0 ? (year1Investment / savings) * 12 : 0;
+
+  gel('s-net-label').textContent = `Net Savings After AI Investment (${yrs} Yrs)`;
+  gel('s-net').textContent       = fmt(netSav);
+
+  gel('r-annual').textContent    = fmt(savings);
+  gel('r-ben-label').textContent = `Realized Benefits (${yrs} Yrs)`;
+  gel('r-ben').textContent       = fmt(benefits);
+  gel('r-inv').textContent       = fmt(totalInv);
+  gel('r-before-label').textContent = `Total Investment Before AI (${yrs} Yrs)`;
+  gel('r-after-label').textContent  = `Total Investment After AI (${yrs} Yrs)`;
+  gel('r-before').textContent    = fmt(totalBeforeAI);
+  gel('r-after').textContent     = fmt(totalAfterAI);
+  gel('r-net').textContent       = fmt(netSav);
+  gel('r-roi').textContent       = roiPct.toFixed(1) + '%';
+  gel('r-pay').textContent       = paybackMo.toFixed(1) + ' months';
+
+  // KPIs
+  gel('kpi-before').textContent  = fmtK(totalBeforeAI);
+  gel('kpi-after').textContent   = fmtK(totalAfterAI);
+  gel('kpi-net').textContent     = fmtK(netSav);
+  gel('kpi-roi').textContent     = roiPct.toFixed(1) + '%';
+  gel('kpi-before-sub').textContent = `${yrs}-year current resource cost`;
+  gel('kpi-after-sub').textContent  = `${yrs}-year AI resource cost + AI investment`;
+
+  gel('effort-base').textContent = fmt2(baseHoursDay) + ' hrs/day';
+  gel('effort-auto').textContent = fmt2(aiHoursDay) + ' hrs/day';
+  gel('time-saved').textContent  = fmt2(savedHoursDay) + ' hrs/day';
+
+  // ROI meter (cap at 300%)
+  const meterW = Math.min(Math.max(roiPct / 300 * 100, 0), 100);
+  gel('roi-meter').style.width    = meterW + '%';
+  gel('roi-pct-label').textContent = roiPct.toFixed(1) + '%';
+
+  // Payback bar (scale: 0–60 mo)
+  const maxMo = Math.max(60, paybackMo * 1.5);
+  const pBar  = Math.min((paybackMo / maxMo) * 100, 100);
+  gel('payback-bar').style.width      = Math.max(pBar, 8) + '%';
+  gel('payback-bar-label').textContent = paybackMo.toFixed(1) + ' mo';
+  gel('tick-mid').textContent          = (maxMo/2).toFixed(0) + ' mo';
+  gel('tick-end').textContent          = maxMo.toFixed(0) + ' mo';
+
+  // Waterfall
+  const maxVal = Math.max(totalBeforeAI, totalAfterAI, Math.abs(netSav), 1);
+  gel('wf-inv').style.height = (totalBeforeAI / maxVal * 90) + '%';
+  gel('wf-ben').style.height = (totalAfterAI  / maxVal * 90) + '%';
+  gel('wf-net').style.height = (Math.abs(netSav) / maxVal * 90) + '%';
+  gel('wf-net').style.background = netSav >= 0
+    ? 'linear-gradient(180deg,#60a5fa,var(--blue))'
+    : 'linear-gradient(180deg,#f87171,var(--red))';
+  gel('wf-inv-val').textContent = fmtK(totalBeforeAI);
+  gel('wf-ben-val').textContent = fmtK(totalAfterAI);
+  gel('wf-net-val').textContent = fmtK(netSav);
+
+  // Cache for export
+  lastCalc = { eff, rate, days, items, sites, yrs, sw, sup1, escP, svc1,
+    efforts, totalBase, totalAuto, totalItemsPerDay, baseHoursDay, aiHoursDay,
+    savedHoursDay, savings, annualCur, annualAI, dailyCur, dailyAI,
+    supCosts, supCostsTotal, totalInvPerDCS, totalInv, benefits,
+    totalBeforeAI, totalAfterAI, netSav, roiPct, paybackMo };
+}
+
+// ── Word Export (self-contained, no internet/CDN required) ─────────────────────
+function resetExportButton(btn) {
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="9" y1="15" x2="15" y2="15"/></svg> Download Word Report`;
+}
+
+function xmlEscape(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+function wordRun(text, opts = {}) {
+  const props = [];
+  if (opts.bold) props.push('<w:b/>');
+  if (opts.color) props.push(`<w:color w:val="${opts.color}"/>`);
+  if (opts.size) props.push(`<w:sz w:val="${opts.size}"/><w:szCs w:val="${opts.size}"/>`);
+  props.push('<w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>');
+  const rPr = `<w:rPr>${props.join('')}</w:rPr>`;
+  return `<w:r>${rPr}<w:t xml:space="preserve">${xmlEscape(text)}</w:t></w:r>`;
+}
+
+function wordParagraph(text, opts = {}) {
+  const pPr = [];
+  if (opts.align) pPr.push(`<w:jc w:val="${opts.align}"/>`);
+  if (opts.before || opts.after) pPr.push(`<w:spacing w:before="${opts.before || 0}" w:after="${opts.after || 0}"/>`);
+  if (opts.borderBottom) {
+    pPr.push(`<w:pBdr><w:bottom w:val="single" w:sz="${opts.borderSize || 6}" w:space="4" w:color="${opts.borderColor || '2563EB'}"/></w:pBdr>`);
+  }
+  return `<w:p>${pPr.length ? `<w:pPr>${pPr.join('')}</w:pPr>` : ''}${wordRun(text, opts)}</w:p>`;
+}
+
+function tableCell(value, width, opts = {}) {
+  const bg = opts.bg || 'FFFFFF';
+  const align = opts.align || 'left';
+  const color = opts.color || '000000';
+  const bold = !!opts.bold;
+  return `<w:tc>
+    <w:tcPr>
+      <w:tcW w:w="${width}" w:type="dxa"/>
+      <w:shd w:val="clear" w:fill="${bg}"/>
+      <w:vAlign w:val="center"/>
+      <w:tcMar><w:top w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:left w:w="140" w:type="dxa"/><w:right w:w="140" w:type="dxa"/></w:tcMar>
+    </w:tcPr>
+    ${wordParagraph(value, { align, bold, color, size: 18 })}
+  </w:tc>`;
+}
+
+function tableRow(cells, widths, opts = {}) {
+  const trPr = opts.header ? '<w:trPr><w:tblHeader/></w:trPr>' : '';
+  return `<w:tr>${trPr}${cells.map((c, i) => {
+    const cellOpts = typeof c === 'object' && c !== null ? c : { text: c };
+    return tableCell(cellOpts.text, widths[i] || widths[widths.length - 1], cellOpts);
+  }).join('')}</w:tr>`;
+}
+
+function wordTable(rows, widths) {
+  const grid = widths.map(w => `<w:gridCol w:w="${w}"/>`).join('');
+  return `<w:tbl>
+    <w:tblPr>
+      <w:tblW w:w="9360" w:type="dxa"/>
+      <w:tblBorders>
+        <w:top w:val="single" w:sz="4" w:color="CCCCCC"/>
+        <w:left w:val="single" w:sz="4" w:color="CCCCCC"/>
+        <w:bottom w:val="single" w:sz="4" w:color="CCCCCC"/>
+        <w:right w:val="single" w:sz="4" w:color="CCCCCC"/>
+        <w:insideH w:val="single" w:sz="4" w:color="E2E8F0"/>
+        <w:insideV w:val="single" w:sz="4" w:color="E2E8F0"/>
+      </w:tblBorders>
+      <w:tblCellMar><w:top w:w="60" w:type="dxa"/><w:bottom w:w="60" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar>
+    </w:tblPr>
+    <w:tblGrid>${grid}</w:tblGrid>
+    ${rows.join('')}
+  </w:tbl>`;
+}
+
+function tableHeader(labels, widths) {
+  return tableRow(labels.map((label, i) => ({
+    text: label,
+    bg: '0F1F3D',
+    color: 'FFFFFF',
+    bold: true,
+    align: i === 0 ? 'left' : 'right'
+  })), widths, { header: true });
+}
+
+function spacer() {
+  return wordParagraph('', { after: 120 });
+}
+
+const crcTable = (() => {
+  const table = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    table[i] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(bytes) {
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) crc = crcTable[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function strBytes(str) {
+  return new TextEncoder().encode(str);
+}
+
+function zipHeader(size) {
+  return new Uint8Array(size);
+}
+
+function set16(view, offset, value) { view.setUint16(offset, value, true); }
+function set32(view, offset, value) { view.setUint32(offset, value >>> 0, true); }
+
+function makeZip(files) {
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+
+  files.forEach(file => {
+    const nameBytes = strBytes(file.name);
+    const dataBytes = typeof file.data === 'string' ? strBytes(file.data) : file.data;
+    const crc = crc32(dataBytes);
+
+    const local = zipHeader(30 + nameBytes.length);
+    const lv = new DataView(local.buffer);
+    set32(lv, 0, 0x04034b50);
+    set16(lv, 4, 20);
+    set16(lv, 6, 0x0800); // UTF-8 names
+    set16(lv, 8, 0);      // Store, no compression
+    set16(lv, 10, 0);
+    set16(lv, 12, 0);
+    set32(lv, 14, crc);
+    set32(lv, 18, dataBytes.length);
+    set32(lv, 22, dataBytes.length);
+    set16(lv, 26, nameBytes.length);
+    set16(lv, 28, 0);
+    local.set(nameBytes, 30);
+    localParts.push(local, dataBytes);
+
+    const central = zipHeader(46 + nameBytes.length);
+    const cv = new DataView(central.buffer);
+    set32(cv, 0, 0x02014b50);
+    set16(cv, 4, 20);
+    set16(cv, 6, 20);
+    set16(cv, 8, 0x0800);
+    set16(cv, 10, 0);
+    set16(cv, 12, 0);
+    set16(cv, 14, 0);
+    set32(cv, 16, crc);
+    set32(cv, 20, dataBytes.length);
+    set32(cv, 24, dataBytes.length);
+    set16(cv, 28, nameBytes.length);
+    set16(cv, 30, 0);
+    set16(cv, 32, 0);
+    set16(cv, 34, 0);
+    set16(cv, 36, 0);
+    set32(cv, 38, 0);
+    set32(cv, 42, offset);
+    central.set(nameBytes, 46);
+    centralParts.push(central);
+
+    offset += local.length + dataBytes.length;
+  });
+
+  const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
+  const centralOffset = offset;
+  const end = zipHeader(22);
+  const ev = new DataView(end.buffer);
+  set32(ev, 0, 0x06054b50);
+  set16(ev, 4, 0);
+  set16(ev, 6, 0);
+  set16(ev, 8, files.length);
+  set16(ev, 10, files.length);
+  set32(ev, 12, centralSize);
+  set32(ev, 16, centralOffset);
+  set16(ev, 20, 0);
+
+  const all = [...localParts, ...centralParts, end];
+  const total = all.reduce((sum, part) => sum + part.length, 0);
+  const out = new Uint8Array(total);
+  let pos = 0;
+  all.forEach(part => { out.set(part, pos); pos += part.length; });
+  return out;
+}
+
+function buildWordDocumentXml(d) {
+  const eff = Math.round(d.eff * 100);
+  const W = 9360;
+  const fmt2  = n => Number(n).toFixed(2);
+  const fmtD  = n => '$' + Math.round(Number(n)).toLocaleString();
+  const fmtPct= n => Number(n).toFixed(1) + '%';
+  const today = new Date().toLocaleDateString();
+  const content = [];
+
+  content.push(wordParagraph('ROI Calculator', { bold: true, size: 52, color: '0F1F3D', after: 80 }));
+  content.push(wordParagraph('ROI Analysis Report', { size: 36, color: '2563EB', after: 80 }));
+  content.push(wordParagraph(`${d.yrs}-Year projection  ·  ${d.sites} DCS site${d.sites>1?'s':''}  ·  ${eff}% efficiency gain  ·  Generated ${today}`, { size: 18, color: '94A3B8', after: 300 }));
+
+  content.push(wordParagraph('Key Metrics at a Glance', { bold: true, size: 28, color: '0F1F3D', before: 120, after: 120, borderBottom: true }));
+  const metricWidths = [2340, 2340, 2340, 2340];
+  content.push(wordTable([
+    tableHeader(['Metric', 'Value', 'Metric', 'Value'], metricWidths),
+    tableRow([
+      {text:'Total Investment Before AI', bg:'F8FAFC', bold:true}, {text:fmtD(d.totalBeforeAI), bg:'F8FAFC', align:'right'},
+      {text:'Total Investment After AI', bg:'F8FAFC', bold:true}, {text:fmtD(d.totalAfterAI), bg:'F8FAFC', align:'right'}
+    ], metricWidths),
+    tableRow([
+      {text:'Net Savings', bg:'ECFDF5', bold:true}, {text:fmtD(d.netSav), bg:'ECFDF5', align:'right', bold:true, color:'006100'},
+      {text:'ROI', bg:'ECFDF5', bold:true}, {text:fmtPct(d.roiPct), bg:'ECFDF5', align:'right', bold:true, color:'006100'}
+    ], metricWidths)
+  ], metricWidths));
+  content.push(spacer());
+
+  const effortWidths = [4200, 1700, 1730, 1730];
+  const effortRows = [tableHeader(['Task', 'Baseline Total (hrs/day)', `With AI Total (${eff}%)`, 'Saved Total (hrs/day)'], effortWidths)];
+  TASKS.forEach((task, i) => {
+    const base = d.efforts[i] * d.totalItemsPerDay;
+    const ai = base * (1 - d.eff);
+    effortRows.push(tableRow([
+      {text: task, bg: 'F8FAFC'},
+      {text: fmt2(base), bg: 'FFFFFF', align: 'right'},
+      {text: fmt2(ai), bg: 'EFF6FF', align: 'right'},
+      {text: fmt2(base - ai), bg: 'ECFDF5', align: 'right'}
+    ], effortWidths));
+  });
+  effortRows.push(tableRow([
+    {text:'Total', bg:'0F1F3D', color:'FFFFFF', bold:true},
+    {text:fmt2(d.baseHoursDay), bg:'0F1F3D', color:'FFFFFF', bold:true, align:'right'},
+    {text:fmt2(d.aiHoursDay), bg:'0F1F3D', color:'FFFFFF', bold:true, align:'right'},
+    {text:fmt2(d.savedHoursDay), bg:'0F1F3D', color:'FFFFFF', bold:true, align:'right'}
+  ], effortWidths));
+  content.push(wordParagraph('1. Engineering Effort Totals', { bold: true, size: 28, color: '0F1F3D', before: 120, after: 120, borderBottom: true }));
+  content.push(wordTable(effortRows, effortWidths));
+  content.push(spacer());
+
+  const savWidths = [4680, 2340, 2340];
+  const savRows = [tableHeader(['Metric', 'Current State', `With AI (${eff}%)`], savWidths)];
+  [
+    ['Total Items per Day', d.totalItemsPerDay, d.totalItemsPerDay],
+    ['Total Research Time per Day (hrs)', fmt2(d.baseHoursDay), fmt2(d.aiHoursDay)],
+    ['Labor Rate ($/hr)', '$' + Number(d.rate).toLocaleString(), '$' + Number(d.rate).toLocaleString()],
+    ['Daily Cost for Resources ($)', fmtD(d.dailyCur), fmtD(d.dailyAI)],
+    ['Work Days / Year', d.days, d.days],
+    ['Total Cost for Resources ($)', fmtD(d.annualCur), fmtD(d.annualAI)],
+  ].forEach((r, i) => savRows.push(tableRow([
+    {text:r[0], bg:i%2===0?'F8FAFC':'FFFFFF'},
+    {text:r[1], bg:i%2===0?'F8FAFC':'FFFFFF', align:'right'},
+    {text:r[2], bg:'EFF6FF', align:'right'}
+  ], savWidths)));
+  savRows.push(tableRow([
+    {text:'Annual Resource Savings ($)', bg:'ECFDF5', bold:true},
+    {text:'', bg:'ECFDF5', align:'right'},
+    {text:fmtD(d.savings), bg:'C6EFCE', color:'006100', bold:true, align:'right'}
+  ], savWidths));
+  savRows.push(tableRow([
+    {text:`Net Savings After AI Investment (${d.yrs} Yrs)`, bg:'ECFDF5', bold:true},
+    {text:'', bg:'ECFDF5', align:'right'},
+    {text:fmtD(d.netSav), bg:'C6EFCE', color:'006100', bold:true, align:'right'}
+  ], savWidths));
+  content.push(wordParagraph('2. Financial Savings', { bold: true, size: 28, color: '0F1F3D', before: 120, after: 120, borderBottom: true }));
+  content.push(wordTable(savRows, savWidths));
+  content.push(spacer());
+
+  const invWidths = [2600, ...Array(d.yrs).fill(Math.floor((W - 2600 - 1160) / d.yrs)), 1160];
+  const invRows = [tableHeader(['Component', ...Array.from({length:d.yrs}, (_,i)=>`Year ${i+1}`), 'Total'], invWidths)];
+  [
+    ['Software', d.supCostsTotal.map(c => c.sw)],
+    ['Support', d.supCostsTotal.map(c => c.sup)],
+    ['Service', d.supCostsTotal.map(c => c.svc)]
+  ].forEach(([label, vals], rowIdx) => {
+    const total = vals.reduce((a,b) => a + b, 0);
+    invRows.push(tableRow([
+      {text: label, bg: rowIdx%2===0 ? 'F8FAFC' : 'FFFFFF'},
+      ...vals.map(v => ({text: v === 0 ? '—' : fmtD(v), bg: rowIdx%2===0 ? 'F8FAFC' : 'FFFFFF', align:'right'})),
+      {text: total === 0 ? '—' : fmtD(total), bg: rowIdx%2===0 ? 'F8FAFC' : 'FFFFFF', align:'right'}
+    ], invWidths));
+  });
+  invRows.push(tableRow([
+    {text:'Total / Year', bg:'0F1F3D', color:'FFFFFF', bold:true},
+    ...d.supCostsTotal.map(c => ({text:fmtD(c.tot), bg:'0F1F3D', color:'FFFFFF', bold:true, align:'right'})),
+    {text:fmtD(d.totalInv), bg:'0F1F3D', color:'FFFFFF', bold:true, align:'right'}
+  ], invWidths));
+  content.push(wordParagraph('3. Investment Schedule', { bold: true, size: 28, color: '0F1F3D', before: 120, after: 120, borderBottom: true }));
+  content.push(wordTable(invRows, invWidths));
+  content.push(spacer());
+
+  const roiWidths = [6860, 2500];
+  const roiRows = [tableHeader(['Metric', 'Value'], roiWidths)];
+  [
+    ['Annual Resource Savings', fmtD(d.savings), 'F8FAFC', false],
+    [`Realized Benefits (${d.yrs} Yrs)`, fmtD(d.benefits), 'F8FAFC', false],
+    ['Total AI Investment', fmtD(d.totalInv), 'FFFFFF', false],
+    [`Total Investment Before AI (${d.yrs} Yrs)`, fmtD(d.totalBeforeAI), 'FFFFFF', false],
+    [`Total Investment After AI (${d.yrs} Yrs)`, fmtD(d.totalAfterAI), 'FFFFFF', false],
+    ['Net Savings', fmtD(d.netSav), 'C6EFCE', true],
+    ['Return on Investment', fmtPct(d.roiPct), 'C6EFCE', true],
+    ['Payback Period', d.paybackMo.toFixed(1) + ' months', 'FFFBEB', false],
+  ].forEach(([label, value, bg, bold]) => roiRows.push(tableRow([
+    {text:label, bg, bold},
+    {text:value, bg, bold, align:'right'}
+  ], roiWidths)));
+  content.push(wordParagraph('4. ROI Summary', { bold: true, size: 28, color: '0F1F3D', before: 120, after: 120, borderBottom: true }));
+  content.push(wordTable(roiRows, roiWidths));
+  content.push(spacer());
+
+  const assumptionsRows = [tableHeader(['Parameter', 'Value'], roiWidths)];
+  [
+    ['Efficiency Gain', eff + '%'],
+    ['Engineer Labor Rate', '$' + Number(d.rate).toLocaleString() + '/hr'],
+    ['Work Days / Year', String(d.days)],
+    ['Items Researched / Day / DCS', String(d.items)],
+    ['Number of DCS Sites', String(d.sites)],
+    ['Total Items per Day', String(d.totalItemsPerDay)],
+    ['Total Hours per Item', fmt2(d.totalBase)],
+    ['Total Hours for Entered DCS / Items per Day', fmt2(d.baseHoursDay)],
+    ['Analysis Horizon', d.yrs + ' years'],
+    ['Software Cost (Yr 1)', fmtD(d.sw)],
+    ['Support Cost (Yr 1)', fmtD(d.sup1)],
+    ['Support Escalation Rule', 'Year N = base support + escalation × previous year support'],
+    ['Service Cost (Yr 1)', fmtD(d.svc1)],
+  ].forEach(([label, value], i) => assumptionsRows.push(tableRow([
+    {text:label, bg:i%2===0?'F8FAFC':'FFFFFF'},
+    {text:value, bg:i%2===0?'F8FAFC':'FFFFFF', align:'right'}
+  ], roiWidths)));
+  content.push(wordParagraph('Assumptions Used', { bold: true, size: 28, color: '0F1F3D', before: 120, after: 120, borderBottom: true }));
+  content.push(wordTable(assumptionsRows, roiWidths));
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <w:body>
+    ${content.join('\n')}
+    <w:sectPr>
+      <w:pgSz w:w="12240" w:h="15840"/>
+      <w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/>
+    </w:sectPr>
+  </w:body>
+</w:document>`;
+}
+
+function buildDocxBlob(d) {
+  const documentXml = buildWordDocumentXml(d);
+  const nowIso = new Date().toISOString();
+  const files = [
+    { name: '[Content_Types].xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+</Types>` },
+    { name: '_rels/.rels', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+</Relationships>` },
+    { name: 'docProps/core.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>DCS AI ROI Analysis Report</dc:title>
+  <dc:creator>ROI Calculator</dc:creator>
+  <cp:lastModifiedBy>ROI Calculator</cp:lastModifiedBy>
+  <dcterms:created xsi:type="dcterms:W3CDTF">${nowIso}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">${nowIso}</dcterms:modified>
+</cp:coreProperties>` },
+    { name: 'docProps/app.xml', data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <Application>ROI Calculator</Application>
+</Properties>` },
+    { name: 'word/document.xml', data: documentXml },
+  ];
+  const zipBytes = makeZip(files);
+  return new Blob([zipBytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+async function exportWord() {
+  const btn = document.querySelector('.btn-export');
+  btn.textContent = ' Generating…';
+  btn.disabled = true;
+
+  try {
+    calc();
+    if (!lastCalc || typeof lastCalc.netSav === 'undefined') {
+      throw new Error('The calculator values were not ready. Please change any input once and try again.');
+    }
+    const blob = buildDocxBlob(lastCalc);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = 'Automation_Integrity_ROI.docx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 500);
+  } catch (err) {
+    console.error('Word export failed:', err);
+    alert('Word export failed: ' + (err && err.message ? err.message : err));
+  } finally {
+    btn.disabled = false;
+    resetExportButton(btn);
+  }
+}
+
+// ── Wire all inputs via addEventListener (belt-and-suspenders) ──
+document.addEventListener('DOMContentLoaded', function() {
+  const inputIds = ['efficiency','rate','days','items','sites','yrs','sw','sup','esc','svc','e1','e2','e3','e4','e5','e6','e7'];
+  inputIds.forEach(function(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', function() {
+      if (id === 'efficiency') {
+        document.getElementById('eff-display').textContent = el.value + '%';
+      }
+      calc();
+    });
+    el.addEventListener('change', function() {
+      if (id === 'efficiency') {
+        document.getElementById('eff-display').textContent = el.value + '%';
+      }
+      calc();
+    });
+  });
+  calc();
+});
+</script>
+
+<script>
+// ── Offline Word export override (no CDN, no docx library) ───────────────────
+// This intentionally creates a Word-compatible .doc file from HTML. Microsoft Word
+// opens it directly, and it works from a local file path without internet access.
+(function() {
+  function h(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function money(n) { return '$' + Math.round(Number(n || 0)).toLocaleString(); }
+  function num2(n) { return Number(n || 0).toFixed(2); }
+  function pct(n) { return Number(n || 0).toFixed(1) + '%'; }
+
+  function rows(data) {
+    return data.map(r => '<tr>' + r.map((c, i) => `<td class="${i === 0 ? 'label' : 'num'}">${c}</td>`).join('') + '</tr>').join('\n');
+  }
+
+  function buildWordHtml(d) {
+    const effPct = Math.round(d.eff * 100);
+    const generated = new Date().toLocaleDateString();
+    const effortRows = TASKS.map((task, i) => {
+      const perItem = Number(d.efforts[i] || 0);
+      const base = perItem * d.totalItemsPerDay;
+      const ai = base * (1 - d.eff);
+      return [h(task), num2(base), num2(ai), num2(base - ai)];
+    });
+    effortRows.push(['<b>Total</b>', '<b>' + num2(d.baseHoursDay) + '</b>', '<b>' + num2(d.aiHoursDay) + '</b>', '<b>' + num2(d.savedHoursDay) + '</b>']);
+
+    const invHead = ['Component'];
+    for (let i = 1; i <= d.yrs; i++) invHead.push('Year ' + i);
+    invHead.push('Total');
+
+    const invRows = [
+      ['Software', ...d.supCosts.map(c => c.sw ? money(c.sw) : '—'), money(d.sw * d.sites)],
+      ['Support', ...d.supCosts.map(c => money(c.sup * d.sites)), money(d.supCostsTotal * d.sites)],
+      ['Service', ...d.supCosts.map(c => c.svc ? money(c.svc) : '—'), money(d.svc1 * d.sites)],
+      ['<b>Total / Year</b>', ...d.supCosts.map(c => '<b>' + money(c.tot * d.sites) + '</b>'), '<b>' + money(d.totalInv) + '</b>']
+    ];
+
+    const savingsRows = [
+      ['DCS Sites', d.sites, d.sites],
+      ['Items per Day per DCS', d.items, d.items],
+      ['Total Items per Day', d.totalItemsPerDay, d.totalItemsPerDay],
+      ['Resource Time per Day (hrs)', num2(d.baseHoursDay), num2(d.aiHoursDay)],
+      ['Labor Rate ($/hr)', '$' + Number(d.rate || 0).toLocaleString(), '$' + Number(d.rate || 0).toLocaleString()],
+      ['Daily Cost for Resources', money(d.dailyCur), money(d.dailyAI)],
+      ['Work Days / Year', d.days, d.days],
+      ['Total Cost for Resources', money(d.annualCur), money(d.annualAI)],
+      ['<b>Annual Savings</b>', '', '<b>' + money(d.savings) + '</b>'],
+      ['<b>Net Savings</b>', '', '<b>' + money(d.netSav) + '</b>']
+    ];
+
+    const roiRows = [
+      ['Total Investment Before AI', money(d.totalBeforeAI)],
+      ['Total Investment After AI', money(d.totalAfterAI)],
+      ['Realized Benefits (' + d.yrs + ' Yrs)', money(d.benefits)],
+      ['Total AI Investment', money(d.totalInv)],
+      ['Net Savings', money(d.netSav)],
+      ['Return on Investment', pct(d.roiPct)],
+      ['Payback Period', Number(d.paybackMo || 0).toFixed(1) + ' months']
+    ];
+
+    const assumptionsRows = [
+      ['Efficiency Gain', effPct + '%'],
+      ['Engineer Labor Rate', '$' + Number(d.rate || 0).toLocaleString() + '/hr'],
+      ['Work Days / Year', d.days],
+      ['Items Researched / Day / DCS', d.items],
+      ['Number of DCS Sites', d.sites],
+      ['Analysis Horizon', d.yrs + ' years'],
+      ['Software Cost (Year 1 per DCS)', money(d.sw)],
+      ['Support Cost (Year 1 per DCS)', money(d.sup1)],
+      ['Support Escalation', (d.escP * 100).toFixed(1) + '%'],
+      ['Service Cost (Year 1 per DCS)', money(d.svc1)]
+    ];
+
+    return `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>DCS AI ROI Analysis Report</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->
+<style>
+  @page { size: 8.5in 11in; margin: 0.7in; }
+  body { font-family: Arial, sans-serif; color: #1E293B; font-size: 10.5pt; }
+  h1 { color: #0F1F3D; font-size: 26pt; margin: 0 0 4pt 0; }
+  h2 { color: #2563EB; font-size: 17pt; margin: 4pt 0 18pt 0; }
+  h3 { color: #0F1F3D; font-size: 14pt; border-bottom: 2pt solid #2563EB; padding-bottom: 4pt; margin-top: 18pt; }
+  .meta { color: #64748B; margin-bottom: 14pt; }
+  .kpi { width: 100%; border-collapse: collapse; margin: 10pt 0 14pt 0; }
+  .kpi td { background: #0F1F3D; color: white; padding: 10pt; width: 25%; border: 1pt solid white; }
+  .kpi .small { color: #CBD5E1; font-size: 8.5pt; }
+  .kpi .big { color: #93C5FD; font-size: 16pt; font-weight: bold; margin-top: 4pt; }
+  table.data { width: 100%; border-collapse: collapse; margin-bottom: 12pt; }
+  table.data th { background: #0F1F3D; color: white; padding: 6pt; border: 1pt solid #0F1F3D; text-align: left; }
+  table.data td { padding: 6pt; border: 1pt solid #CBD5E1; }
+  table.data td.num { text-align: right; font-family: Consolas, monospace; }
+  table.data tr:nth-child(even) td { background: #F8FAFC; }
+  .note { color: #64748B; font-size: 9pt; margin-top: 12pt; }
+</style>
+</head>
+<body>
+<h1>ROI Calculator</h1>
+<h2>ROI Analysis Report</h2>
+<div class="meta">${h(d.yrs)}-Year projection · ${h(d.sites)} DCS site${d.sites > 1 ? 's' : ''} · ${effPct}% efficiency gain · Generated ${h(generated)}</div>
+<table class="kpi"><tr>
+  <td><div class="small">Total Investment Before AI</div><div class="big">${money(d.totalBeforeAI)}</div></td>
+  <td><div class="small">Total Investment After AI</div><div class="big">${money(d.totalAfterAI)}</div></td>
+  <td><div class="small">Net Savings</div><div class="big">${money(d.netSav)}</div></td>
+  <td><div class="small">ROI</div><div class="big">${pct(d.roiPct)}</div></td>
+</tr></table>
+
+<h3>1. Engineering Effort Totals</h3>
+<table class="data"><thead><tr><th>Task</th><th>Baseline Total (hrs/day)</th><th>With AI Total (${effPct}%)</th><th>Saved Total (hrs/day)</th></tr></thead><tbody>${rows(effortRows)}</tbody></table>
+
+<h3>2. Financial Savings</h3>
+<table class="data"><thead><tr><th>Metric</th><th>Current State</th><th>With AI</th></tr></thead><tbody>${rows(savingsRows)}</tbody></table>
+
+<h3>3. Investment Schedule</h3>
+<table class="data"><thead><tr>${invHead.map(c => '<th>' + h(c) + '</th>').join('')}</tr></thead><tbody>${rows(invRows)}</tbody></table>
+
+<h3>4. ROI Summary</h3>
+<table class="data"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>${rows(roiRows)}</tbody></table>
+
+<h3>Assumptions Used</h3>
+<table class="data"><thead><tr><th>Parameter</th><th>Value</th></tr></thead><tbody>${rows(assumptionsRows)}</tbody></table>
+
+<div class="note">This Word report was generated fully offline from the ROI calculator. No external Word export library or CDN is required.</div>
+</body>
+</html>`;
+  }
+
+  window.exportWord = function exportWordOfflineDoc() {
+    const btn = document.querySelector('.btn-export');
+    const original = btn ? btn.innerHTML : '';
+    try {
+      if (btn) { btn.textContent = ' Generating…'; btn.disabled = true; }
+      calc();
+      if (!window.lastCalc && typeof lastCalc === 'undefined') throw new Error('Calculator values are not ready.');
+      const d = lastCalc;
+      if (!d || typeof d.netSav === 'undefined') throw new Error('Calculator values are not ready. Please change one input and try again.');
+      const html = buildWordHtml(d);
+      const blob = new Blob(['\ufeff', html], { type: 'application/msword;charset=utf-8' });
+      const filename = 'Automation_Integrity_ROI_Report.doc';
+
+      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+      }
+    } catch (err) {
+      console.error('Offline Word export failed:', err);
+      alert('Word export failed: ' + (err && err.message ? err.message : String(err)));
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = original || 'Download Word Report (.doc)';
+      }
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.querySelector('.btn-export');
+    if (btn) btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="9" y1="15" x2="15" y2="15"/></svg> Download Word Report (.doc)';
+  });
+})();
+</script>
+
+</body>
+</html>
+
